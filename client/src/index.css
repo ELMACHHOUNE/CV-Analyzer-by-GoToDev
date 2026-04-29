@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #f0f6fb;
+  --color-primary-100: #ddeaf5;
+  --color-primary-200: #c1d6eb;
+  --color-primary-300: #9fbae0;
+  --color-primary-400: #7d9cd4;
+  --color-primary-500: #5b7fc8;
+  --color-primary-600: #427ab5;
+  --color-primary-700: #406aaf;
+  --color-primary-800: #315589;
+  --color-primary-900: #264463;
+
+  --color-accent-50: #fffef5;
+  --color-accent-100: #fffce8;
+  --color-accent-200: #fff9d1;
+  --color-accent-300: #fff5b3;
+  --color-accent-400: #ffee95;
+  --color-accent-500: #ffe8be;
+  --color-accent-600: #f7dd7d;
+  --color-accent-700: #f5d855;
+  --color-accent-800: #e6c429;
+  --color-accent-900: #c9a81a;
+}
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-primary-50 to-primary-100 text-primary-900;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-primary-900;
+  }
+}
+
+@layer components {
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+  }
+
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-700;
+  }
+
+  .bg-gradient-accent {
+    @apply bg-gradient-to-r from-accent-600 to-accent-500;
+  }
+}
