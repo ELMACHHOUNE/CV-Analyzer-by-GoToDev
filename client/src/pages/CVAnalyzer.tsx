@@ -120,7 +120,24 @@ const CVAnalyzer: React.FC = () => {
         {/* Footer */}
         <div className="text-center text-gray-600 text-sm">
           <p>
-            Powered by advanced AI analysis • Created by GoToDev • gotodev.ma
+            Powered by advanced AI analysis • Created by{" "}
+            <a
+              href="https://gotodev.ma/"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-primary-700 hover:text-primary-800 hover:underline"
+            >
+              GoToDev
+            </a>{" "}
+            •{" "}
+            <a
+              href="https://gotodev.ma/"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-primary-700 hover:text-primary-800 hover:underline"
+            >
+              gotodev.ma
+            </a>
           </p>
         </div>
       </div>

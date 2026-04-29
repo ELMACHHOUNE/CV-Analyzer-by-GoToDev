@@ -1,7 +1,6 @@
 fastapi
 uvicorn[standard]
 python-dotenv
-pymongo
 pdfplumber
 openai
 python-multipart

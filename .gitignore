@@ -41,4 +41,3 @@ env/
 *.sw?
 
 .env
-.env.*

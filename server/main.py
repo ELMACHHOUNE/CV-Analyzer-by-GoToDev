@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile, Form, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pymongo import MongoClient
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
@@ -28,9 +27,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client["cv_analyzer"]
 
 groq_client = OpenAI(
     api_key=os.getenv("AI_API_KEY"),
@@ -101,12 +97,4 @@ async def analyze(cv: UploadFile = File(...), job: str = Form(...)):
     if not cv_text:
         raise HTTPException(status_code=400, detail="Could not extract text from the PDF")
 
-    result = analyze_with_ai(cv_text=cv_text, job=job)
-
-    try:
-        db.results.insert_one(dict(result))
-    except Exception:
-        # Keep API working even if MongoDB is unavailable
-        pass
-
-    return result
+    return analyze_with_ai(cv_text=cv_text, job=job)

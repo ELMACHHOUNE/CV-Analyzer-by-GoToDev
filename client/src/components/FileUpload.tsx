@@ -9,6 +9,7 @@ type Props = {
 
 export const FileUpload: React.FC<Props> = ({ file, setFile }) => {
   const [dragOver, setDragOver] = useState(false);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -24,6 +25,15 @@ export const FileUpload: React.FC<Props> = ({ file, setFile }) => {
     <div className="space-y-2">
       <Label htmlFor="cv-upload">Upload CV (PDF)</Label>
       <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -52,6 +62,7 @@ export const FileUpload: React.FC<Props> = ({ file, setFile }) => {
           id="cv-upload"
           type="file"
           accept="application/pdf"
+          ref={inputRef}
           onChange={(e) => {
             const f = e.target.files?.[0] ?? null;
             if (f && f.type === "application/pdf") setFile(f);
