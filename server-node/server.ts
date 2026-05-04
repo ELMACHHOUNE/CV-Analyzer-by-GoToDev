@@ -8,6 +8,7 @@ import { PDFParse } from "pdf-parse";
 dotenv.config();
 
 const app = express();
+app.disable("x-powered-by");
 const upload = multer();
 const port = Number(process.env.PORT);
 
