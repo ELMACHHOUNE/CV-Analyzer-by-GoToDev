@@ -1,6 +1,6 @@
 import type { AnalysisResult } from '../types';
 
-export async function analyzeCV(formData: FormData): Promise<AnalysisResult> {
+export async function analyzeCV(formData: FormData): Promise<AnalysisResult | { error: string }> {
   const base = import.meta.env.VITE_API_URL || '';
   const res = await fetch(`${base}/analyze`, {
     method: 'POST',

@@ -80,7 +80,7 @@ const CVAnalyzer: React.FC = () => {
         return;
       }
 
-      setResult(res);
+      setResult(res as AnalysisResult);
       // result retained in component state only (no session storage)
     } catch (err: unknown) {
       let errorMessage = "Failed to analyze";
