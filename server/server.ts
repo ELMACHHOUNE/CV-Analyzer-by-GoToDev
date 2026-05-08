@@ -323,6 +323,10 @@ app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) =>
   }
 });
 
-app.listen(port, () => {
-  console.log(`\n🚀 Server running on http://localhost:${port}\n`);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(port || 5000, () => {
+    console.log(`\n🚀 Server running on http://localhost:${port || 5000}\n`);
+  });
+}
+
+export default app;
