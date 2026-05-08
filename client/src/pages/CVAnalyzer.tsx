@@ -19,16 +19,51 @@ const CVAnalyzer: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
+  function clientValidateJob(jobText: string): {
+    valid: boolean;
+    reason?: string;
+  } {
+    const trimmed = (jobText || "").trim();
+    if (trimmed.length < 50)
+      return {
+        valid: false,
+        reason: "Job description too short (min 50 characters).",
+      };
+    const wordCount = trimmed.split(/\s+/).length;
+    if (wordCount < 15)
+      return {
+        valid: false,
+        reason: "Job description too brief (min 15 words).",
+      };
+    const alphaCount = (trimmed.match(/[A-Za-z]/g) || []).length;
+    if (alphaCount < 10)
+      return {
+        valid: false,
+        reason: "Job description appears trivial. Provide more detail.",
+      };
+    return { valid: true };
+  }
+
   const handleAnalyze = async () => {
     setError(null);
     setResult(null);
+    // clear any previous in-memory result
+    setResult(null);
 
     if (!file) {
-      setError("Please upload a CV PDF.");
+      setError("Please upload a CV PDF file.");
       return;
     }
     if (!job.trim()) {
       setError("Please provide a job description.");
+      return;
+    }
+
+    const clientValidation = clientValidateJob(job);
+    if (!clientValidation.valid) {
+      setError(
+        clientValidation.reason || "Please provide a valid job description.",
+      );
       return;
     }
 
@@ -39,10 +74,19 @@ const CVAnalyzer: React.FC = () => {
     try {
       setLoading(true);
       const res = await analyzeCV(fd);
+
+      if ("error" in res && res.error) {
+        setError(res.error);
+        return;
+      }
+
       setResult(res);
+      // result retained in component state only (no session storage)
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to analyze";
+      let errorMessage = "Failed to analyze";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -80,7 +124,7 @@ const CVAnalyzer: React.FC = () => {
                 </div>
 
                 {error && (
-                  <div className="p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
+                  <div className="p-4 rounded-lg bg-red-50 border border-red-300 flex items-start gap-3">
                     <div className="mt-0.5 flex-shrink-0">
                       <svg
                         className="w-5 h-5 text-red-600"
@@ -96,7 +140,9 @@ const CVAnalyzer: React.FC = () => {
                         />
                       </svg>
                     </div>
-                    <span className="text-red-800 font-medium">{error}</span>
+                    <div>
+                      <span className="text-red-800 font-medium">{error}</span>
+                    </div>
                   </div>
                 )}
 

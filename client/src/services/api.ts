@@ -7,11 +7,16 @@ export async function analyzeCV(formData: FormData): Promise<AnalysisResult> {
     body: formData,
   });
 
+  const data = await res.json();
+
+  // If not ok, the response might contain an error field
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || 'Server error');
+    if (data.error) {
+      return { error: data.error };
+    }
+    throw new Error(data.error || 'Server error');
   }
 
-  const data = await res.json();
+  // Success response
   return data as AnalysisResult;
 }
