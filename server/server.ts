@@ -2,6 +2,7 @@ import "./polyfills.js";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import crypto from "crypto";
 
 import type { Request, Response } from "express";
 import multer from "multer";
@@ -12,6 +13,33 @@ dotenv.config();
 const app = express();
 app.disable("x-powered-by");
 const upload = multer();
+
+// Simple in-memory cache for analysis results (prevents duplicate API calls)
+const analysisCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+function getCacheKey(cvBuffer: Buffer, jobDescription: string): string {
+  const cvHash = crypto.createHash("sha256").update(cvBuffer).digest("hex");
+  const jobHash = crypto.createHash("sha256").update(jobDescription).digest("hex");
+  return `${cvHash}:${jobHash}`;
+}
+
+function getCachedResult(key: string) {
+  const cached = analysisCache.get(key);
+  if (!cached) return null;
+  
+  // Check if cache is still valid
+  if (Date.now() - cached.timestamp > CACHE_TTL) {
+    analysisCache.delete(key);
+    return null;
+  }
+  
+  return cached.data;
+}
+
+function setCachedResult(key: string, data: any) {
+  analysisCache.set(key, { data, timestamp: Date.now() });
+}
 
 app.get("/health", (req: Request, res: Response) => {
   res.json({
@@ -181,7 +209,7 @@ function validateJobDescription(job: string): { valid: boolean; reason?: string 
   return { valid: true };
 }
 
-async function analyzeWithAI(cvPdfBytes: Buffer, job: string): Promise<AnalyzeResult | { error: string }> {
+async function analyzeWithAI(cvPdfBytes: Buffer, job: string): Promise<AnalyzeResult | { error: string; retryAfter?: number }> {
   try {
     const systemPrompt = `You are a strict CV evaluator. Follow these rules:
 
@@ -271,6 +299,18 @@ NO explanations. NO markdown. ONLY JSON.`;
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unexpected AI service error";
+    
+    // Handle rate limit errors
+    if (message.includes("429") || message.includes("quota") || message.includes("Too Many Requests")) {
+      const retryMatch = message.match(/Please retry in ([0-9.]+)s/);
+      const retrySeconds = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 30;
+      
+      return {
+        error: "🔄 API quota exceeded. Please wait before trying again. Using Gemini free tier? Upgrade to paid plan for unlimited requests.",
+        retryAfter: retrySeconds
+      };
+    }
+    
     throw new Error(message);
   }
 }
@@ -290,7 +330,6 @@ app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) =>
       return res.status(400).json({ error: "Job description is required" });
     }
 
-
     const validation = validateJobDescription(job);
     if (!validation.valid) {
       return res.status(400).json({ error: validation.reason || "Invalid job description" });
@@ -300,11 +339,33 @@ app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) =>
       return res.status(400).json({ error: "Invalid PDF file" });
     }
 
+    // Check cache first to avoid unnecessary API calls
+    const cacheKey = getCacheKey(req.file.buffer, job);
+    const cachedResult = getCachedResult(cacheKey);
+    
+    if (cachedResult) {
+      return res.json({ ...cachedResult, fromCache: true });
+    }
+
+    // Call AI API
     const result = await analyzeWithAI(req.file.buffer, job);
 
+    // Handle quota and other errors
     if ("error" in result) {
+      // If it's a quota error with retry info, set appropriate headers
+      if (result.retryAfter) {
+        res.set("Retry-After", String(result.retryAfter));
+        return res.status(429).json({ 
+          error: result.error,
+          retryAfter: result.retryAfter,
+          retryAt: new Date(Date.now() + result.retryAfter * 1000).toISOString()
+        });
+      }
       return res.status(400).json({ error: result.error });
     }
+
+    // Cache the successful result
+    setCachedResult(cacheKey, result);
 
     return res.json(result);
   } catch (error) {
