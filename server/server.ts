@@ -13,6 +13,16 @@ const app = express();
 app.disable("x-powered-by");
 const upload = multer();
 
+app.get("/health", (req: Request, res: Response) => {
+  res.json({
+    status: "ok",
+    nodeEnv: process.env.NODE_ENV,
+    hasApiKey: !!process.env.AI_API_KEY,
+    hasGeminiModel: !!process.env.GEMINI_MODEL,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.get("/", (req: Request, res: Response) => {
   res.send("The server has been deployed successfully!");
 });
@@ -289,12 +299,18 @@ NO explanations. NO markdown. ONLY JSON.`;
 
 app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) => {
   try {
+    console.log("[Route /analyze] ===== REQUEST RECEIVED =====");
+    console.log("[Route /analyze] req.file exists:", !!req.file);
+    console.log("[Route /analyze] req.body:", JSON.stringify(req.body));
+    console.log("[Route /analyze] req.headers:", JSON.stringify(req.headers, null, 2));
+    
     if (!req.file?.originalname) {
       console.warn("[Route /analyze] CV file missing");
+      console.log("[Route /analyze] req.files:", req.files);
       return res.status(400).json({ error: "CV file is required" });
     }
 
-    console.log(`[Route /analyze] File received: ${req.file.originalname}, size: ${req.file.buffer.length} bytes`);
+    console.log(`[Route /analyze] File received: ${req.file.originalname}, size: ${req.file.buffer?.length || 0} bytes`);
 
     if (!process.env.AI_API_KEY) {
       console.error("[Route /analyze] AI_API_KEY missing");
@@ -302,6 +318,9 @@ app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) =>
     }
 
     const job = String(req.body?.job || "").trim();
+    console.log("[Route /analyze] Job description length:", job.length);
+    console.log("[Route /analyze] Job description (first 200 chars):", job.substring(0, 200));
+    
     if (!job) {
       console.warn("[Route /analyze] Job description missing");
       return res.status(400).json({ error: "Job description is required" });
@@ -316,10 +335,13 @@ app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) =>
 
     console.log(`[Route /analyze] ✓ Job description validated (${job.split(" ").length} words)`);
     console.log(`[Route /analyze] Extracting CV text from: ${req.file.originalname}`);
+    
     const cvText = await extractPdfText(req.file.buffer);
+    console.log(`[Route /analyze] PDF extraction returned: ${cvText.length} characters`);
 
     if (!cvText) {
-      console.warn("[Route /analyze] Could not extract PDF text");
+      console.warn("[Route /analyze] Could not extract PDF text - cvText is empty");
+      console.warn("[Route /analyze] Buffer was:", req.file.buffer?.length, "bytes");
       return res.status(400).json({ error: "Could not extract text from the PDF" });
     }
 
