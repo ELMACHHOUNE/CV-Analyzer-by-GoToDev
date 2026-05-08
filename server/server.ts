@@ -40,17 +40,30 @@ const geminiClient = new GoogleGenerativeAI(
 );
 
 async function extractPdfText(fileBytes: Buffer): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: fileBytes });
   try {
+    console.log("[PDF Extract] Starting PDF text extraction, buffer size:", fileBytes.length);
+    
+    const { PDFParse } = await import("pdf-parse");
+    console.log("[PDF Extract] PDFParse imported successfully");
+    
+    const parser = new PDFParse({ data: fileBytes });
+    console.log("[PDF Extract] Parser created");
+    
     const parsed = await parser.getText();
-    return (parsed.text || "").trim();
-  } catch {
+    console.log("[PDF Extract] parseText() completed");
+    
+    const text = (parsed.text || "").trim();
+    console.log("[PDF Extract] Extracted text length:", text.length);
+    
+    return text;
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error("[PDF Extract] Error during extraction:", errorMsg);
+    console.error("[PDF Extract] Full error:", error);
     return "";
-  } finally {
-    await parser.destroy();
   }
 }
+
 
 type AnalyzeResult = {
   score: number;
@@ -281,6 +294,8 @@ app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) =>
       return res.status(400).json({ error: "CV file is required" });
     }
 
+    console.log(`[Route /analyze] File received: ${req.file.originalname}, size: ${req.file.buffer.length} bytes`);
+
     if (!process.env.AI_API_KEY) {
       console.error("[Route /analyze] AI_API_KEY missing");
       return res.status(500).json({ error: "AI_API_KEY is missing from server environment" });
@@ -291,6 +306,7 @@ app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) =>
       console.warn("[Route /analyze] Job description missing");
       return res.status(400).json({ error: "Job description is required" });
     }
+
 
     const validation = validateJobDescription(job);
     if (!validation.valid) {
