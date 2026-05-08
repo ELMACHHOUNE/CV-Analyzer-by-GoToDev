@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import FileUpload from "../components/FileUpload";
 import JobInput from "../components/JobInput";
 import AnalyzeButton from "../components/AnalyzeButton";
-import ResultCard from "../components/ResultCard";
+const ResultCard = React.lazy(() => import("../components/ResultCard"));
+import { Suspense } from "react";
 import { analyzeCV } from "../services/api";
 import {
   Card,
@@ -46,8 +47,6 @@ const CVAnalyzer: React.FC = () => {
 
   const handleAnalyze = async () => {
     setError(null);
-    setResult(null);
-    // clear any previous in-memory result
     setResult(null);
 
     if (!file) {
@@ -95,6 +94,9 @@ const CVAnalyzer: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-primary-50 to-gray-100 py-8 px-4">
+      <a href="#main-content" className="sr-only focus:not-sr-only">
+        Skip to main content
+      </a>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -107,7 +109,11 @@ const CVAnalyzer: React.FC = () => {
         </div>
 
         {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <main
+          id="main-content"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8"
+          role="main"
+        >
           {/* Input Section */}
           <div className="lg:col-span-2">
             <Card className="card-hover border-2 border-primary-200 shadow-lg">
@@ -159,9 +165,17 @@ const CVAnalyzer: React.FC = () => {
 
           {/* Results Preview */}
           <div>
-            <ResultCard result={result} />
+            <Suspense
+              fallback={
+                <div className="p-4 border rounded-lg bg-white/50 text-center text-sm text-gray-600">
+                  Loading preview...
+                </div>
+              }
+            >
+              <ResultCard result={result} />
+            </Suspense>
           </div>
-        </div>
+        </main>
 
         {/* Footer */}
         <div className="text-center text-gray-600 text-sm">

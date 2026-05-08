@@ -72,6 +72,37 @@
 
     <!-- Related Links -->
     <link rel="alternate" href="https://gotodev.ma/" hreflang="en" />
+    <!-- Inline critical styles (small, prevents LCP delay for main heading) -->
+    <style>
+      /* page background and primary heading styles to reduce LCP render delay */
+      body {
+        background: linear-gradient(
+          135deg,
+          #f8fafc 0%,
+          #eef2ff 50%,
+          #f8fafc 100%
+        );
+        margin: 0;
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial;
+      }
+      .text-5xl {
+        font-size: 3rem;
+        line-height: 1.05;
+      }
+      .font-bold {
+        font-weight: 700;
+      }
+      .text-primary-900 {
+        color: #0f172a;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
