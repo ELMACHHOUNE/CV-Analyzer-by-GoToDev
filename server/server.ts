@@ -6,7 +6,6 @@ import express from "express";
 import type { Request, Response } from "express";
 import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { PDFParse } from "pdf-parse";
 
 dotenv.config();
 
@@ -41,6 +40,7 @@ const geminiClient = new GoogleGenerativeAI(
 );
 
 async function extractPdfText(fileBytes: Buffer): Promise<string> {
+  const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: fileBytes });
   try {
     const parsed = await parser.getText();
