@@ -33,8 +33,14 @@ app.use(express.urlencoded({ extended: true }));
 
 const port = Number(process.env.PORT);
 
-const clientUrl = process.env.CLIENT_URL;
-const origins = clientUrl ? [clientUrl] : [];
+// Support multiple client origins via comma-separated env var `CLIENT_URLS` or
+// the legacy single `CLIENT_URL` value. Examples:
+// CLIENT_URLS="https://cv-analyzer.gotodev.ma,http://localhost:5173"
+const clientUrlsEnv = process.env.CLIENT_URLS || process.env.CLIENT_URL || "";
+const origins = clientUrlsEnv
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
