@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* Primary Colors - Professional Blue */
   --color-primary-50: #f0f6fb;
   --color-primary-100: #ddeaf5;
   --color-primary-200: #c1d6eb;
@@ -12,6 +13,7 @@
   --color-primary-800: #315589;
   --color-primary-900: #264463;
 
+  /* Accent Colors - Warm Gold */
   --color-accent-50: #fffef5;
   --color-accent-100: #fffce8;
   --color-accent-200: #fff9d1;
@@ -22,11 +24,16 @@
   --color-accent-700: #f5d855;
   --color-accent-800: #e6c429;
   --color-accent-900: #c9a81a;
+
+  /* Fonts */
+  --font-family-sans:
+    Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
 }
 
 @layer base {
   body {
-    @apply bg-gradient-to-br from-primary-50 to-primary-100 text-primary-900;
+    @apply bg-gradient-to-br from-primary-50 via-blue-50 to-primary-100 text-primary-900 font-sans;
   }
 
   h1,
@@ -35,13 +42,31 @@
   h4,
   h5,
   h6 {
-    @apply text-primary-900;
+    @apply text-primary-900 font-bold;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl;
+  }
+
+  h2 {
+    @apply text-3xl;
+  }
+
+  button {
+    @apply font-medium transition-all duration-200;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply w-full px-4 py-2 rounded-lg border border-primary-200 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-300;
   }
 }
 
 @layer components {
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+    @apply rounded-lg border border-primary-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
   }
 
   .bg-gradient-primary {
@@ -50,5 +75,9 @@
 
   .bg-gradient-accent {
     @apply bg-gradient-to-r from-accent-600 to-accent-500;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent;
   }
 }
