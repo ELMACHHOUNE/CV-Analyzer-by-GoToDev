@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+    <defs>
+        <linearGradient id="g" x1="0" x2="1">
+            <stop offset="0" stop-color="#1e293b" />
+            <stop offset="1" stop-color="#5b7fc8" />
+        </linearGradient>
+    </defs>
+    <rect width="1200" height="630" fill="#ffffff" />
+    <rect x="40" y="40" width="1120" height="550" rx="28" fill="url(#g)" opacity="0.06" />
+
+    <!-- Logo mark -->
+    <g transform="translate(120,160)">
+        <rect x="0" y="0" width="220" height="220" rx="28" fill="#0f172a" />
+        <g transform="translate(24,24) scale(0.7)" fill="none" stroke="#ffffff" stroke-width="12">
+            <path d="M30 160 C 80 100, 150 100, 200 160" stroke-linecap="round" />
+            <path d="M40 40 L40 120" stroke-linecap="round" />
+            <circle cx="200" cy="40" r="12" fill="#ffffff" stroke="none" />
+            <circle cx="200" cy="160" r="12" fill="#ffffff" stroke="none" />
+        </g>
+    </g>
+
+    <!-- Text -->
+    <g transform="translate(380,200)">
+        <text x="0" y="0" font-family="Inter, Arial, sans-serif" font-size="56" fill="#0f172a"
+            font-weight="700">GoToDev</text>
+        <text x="0" y="70" font-family="Inter, Arial, sans-serif" font-size="28" fill="#334155">CV
+            Analyzer — AI-powered CV matching</text>
+    </g>
+
+    <!-- Footer URL -->
+    <text x="40" y="590" font-family="Inter, Arial, sans-serif" font-size="20" fill="#94a3b8">gotodev.ma
+        • cv-analyzer.gotodev.me</text>
+</svg>
