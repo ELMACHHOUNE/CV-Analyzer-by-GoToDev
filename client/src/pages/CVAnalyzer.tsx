@@ -174,15 +174,6 @@ const CVAnalyzer: React.FC = () => {
               className="font-semibold text-primary-700 hover:text-primary-800 hover:underline"
             >
               GoToDev
-            </a>{" "}
-            •{" "}
-            <a
-              href="https://gotodev.ma/"
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold text-primary-700 hover:text-primary-800 hover:underline"
-            >
-              gotodev.ma
             </a>
           </p>
         </div>
