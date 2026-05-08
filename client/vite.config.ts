@@ -16,4 +16,23 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  build: {
+    // Enable code splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: (id: string) => {
+          if (id.includes('lucide-react')) {
+            return 'lucide-react';
+          }
+          if (id.includes('@vercel/analytics')) {
+            return 'vercel-analytics';
+          }
+        },
+      },
+    },
+    // Disable source maps in production
+    sourcemap: false,
+    // Chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+  },
 })

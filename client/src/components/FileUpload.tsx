@@ -7,7 +7,7 @@ type Props = {
   setFile: (f: File | null) => void;
 };
 
-export const FileUpload: React.FC<Props> = ({ file, setFile }) => {
+const FileUploadComponent: React.FC<Props> = ({ file, setFile }) => {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -74,4 +74,5 @@ export const FileUpload: React.FC<Props> = ({ file, setFile }) => {
   );
 };
 
+export const FileUpload = React.memo(FileUploadComponent);
 export default FileUpload;

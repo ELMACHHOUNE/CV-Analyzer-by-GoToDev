@@ -8,7 +8,7 @@ type Props = {
   loading?: boolean;
 };
 
-export const AnalyzeButton: React.FC<Props> = ({
+const AnalyzeButtonComponent: React.FC<Props> = ({
   onClick,
   disabled,
   loading,
@@ -35,4 +35,5 @@ export const AnalyzeButton: React.FC<Props> = ({
   );
 };
 
+export const AnalyzeButton = React.memo(AnalyzeButtonComponent);
 export default AnalyzeButton;

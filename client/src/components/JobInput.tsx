@@ -7,7 +7,7 @@ type Props = {
   setJob: (s: string) => void;
 };
 
-export const JobInput: React.FC<Props> = ({ job, setJob }) => {
+const JobInputComponent: React.FC<Props> = ({ job, setJob }) => {
   return (
     <div className="space-y-2">
       <Label htmlFor="job-description">Job Description</Label>
@@ -23,4 +23,5 @@ export const JobInput: React.FC<Props> = ({ job, setJob }) => {
   );
 };
 
+export const JobInput = React.memo(JobInputComponent);
 export default JobInput;

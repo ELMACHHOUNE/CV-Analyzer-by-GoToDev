@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import FileUpload from "../components/FileUpload";
 import JobInput from "../components/JobInput";
 import AnalyzeButton from "../components/AnalyzeButton";
@@ -19,6 +19,16 @@ const CVAnalyzer: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+
+  // Memoized file setter to prevent unnecessary re-renders
+  const handleSetFile = useCallback((f: File | null) => {
+    setFile(f);
+  }, []);
+
+  // Memoized job setter
+  const handleSetJob = useCallback((j: string) => {
+    setJob(j);
+  }, []);
 
   function clientValidateJob(jobText: string): {
     valid: boolean;
@@ -45,7 +55,7 @@ const CVAnalyzer: React.FC = () => {
     return { valid: true };
   }
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     setError(null);
     setResult(null);
 
@@ -80,7 +90,6 @@ const CVAnalyzer: React.FC = () => {
       }
 
       setResult(res as AnalysisResult);
-      // result retained in component state only (no session storage)
     } catch (err: unknown) {
       let errorMessage = "Failed to analyze";
       if (err instanceof Error) {
@@ -90,7 +99,34 @@ const CVAnalyzer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [file, job]);
+
+  // Memoize the error display to avoid re-computing
+  const errorDisplay = useMemo(() => {
+    if (!error) return null;
+    return (
+      <div className="p-4 rounded-lg bg-red-50 border border-red-300 flex items-start gap-3">
+        <div className="mt-0.5 flex-shrink-0">
+          <svg
+            className="w-5 h-5 text-red-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <div>
+          <span className="text-red-800 font-medium">{error}</span>
+        </div>
+      </div>
+    );
+  }, [error]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-primary-50 to-gray-100 py-8 px-4">
@@ -124,33 +160,12 @@ const CVAnalyzer: React.FC = () => {
               </CardHeader>
 
               <CardContent className="space-y-6 pt-6">
-                <FileUpload file={file} setFile={setFile} />
+                <FileUpload file={file} setFile={handleSetFile} />
                 <div className="border-t border-primary-100 pt-6">
-                  <JobInput job={job} setJob={setJob} />
+                  <JobInput job={job} setJob={handleSetJob} />
                 </div>
 
-                {error && (
-                  <div className="p-4 rounded-lg bg-red-50 border border-red-300 flex items-start gap-3">
-                    <div className="mt-0.5 flex-shrink-0">
-                      <svg
-                        className="w-5 h-5 text-red-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="text-red-800 font-medium">{error}</span>
-                    </div>
-                  </div>
-                )}
+                {errorDisplay}
 
                 <div className="pt-4">
                   <AnalyzeButton
