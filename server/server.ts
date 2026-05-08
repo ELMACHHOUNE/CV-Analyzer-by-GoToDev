@@ -177,8 +177,6 @@ function validateJobDescription(job: string): { valid: boolean; reason?: string 
 
 async function analyzeWithAI(cvPdfBytes: Buffer, job: string): Promise<AnalyzeResult | { error: string }> {
   try {
-    console.log("[AI Service] Starting analysis...");
-
     const systemPrompt = `You are a strict CV evaluator. Follow these rules:
 
 1. VALIDATION FIRST:
@@ -222,7 +220,6 @@ NO explanations. NO markdown. ONLY JSON.`;
 
     const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-    console.log("[AI Service] Calling Gemini with model:", process.env.GEMINI_MODEL || "gemini-2.5-flash");
     const result = await model.generateContent({
       contents: [
         {
@@ -244,27 +241,21 @@ NO explanations. NO markdown. ONLY JSON.`;
     });
 
     const content = result.response.text().trim() || "{}";
-    console.log("[AI Service] Raw response:", content);
 
     let data: any;
     try {
       data = JSON.parse(content);
     } catch (parseErr) {
-      console.error("[AI Service] JSON parse error:", parseErr);
       return { error: "AI returned invalid JSON response" };
     }
 
     if (data.error) {
-      console.log("[AI Service] AI validation rejected:", data.error);
       return { error: data.error };
     }
 
     if (typeof data.score !== "number" || !Array.isArray(data.skills_match) || !Array.isArray(data.missing_skills)) {
-      console.error("[AI Service] Invalid response structure:", data);
       return { error: "AI response structure invalid" };
     }
-
-    console.log(`[AI Service] Analysis complete: ${data.score}% match, ${data.skills_match.length} matched skills`);
 
     return {
       score: Math.max(0, Math.min(100, Math.round(data.score))),
@@ -274,79 +265,50 @@ NO explanations. NO markdown. ONLY JSON.`;
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unexpected AI service error";
-    console.error("[AI Service] Error:", message);
-    console.error("[AI Service] Full error:", err);
-    throw err;
+    throw new Error(message);
   }
 }
 
 app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) => {
   try {
-    console.log("[Route /analyze] ===== REQUEST RECEIVED =====");
-    console.log("[Route /analyze] req.file exists:", !!req.file);
-    console.log("[Route /analyze] req.body:", JSON.stringify(req.body));
-    console.log("[Route /analyze] req.headers:", JSON.stringify(req.headers, null, 2));
-    
     if (!req.file?.originalname) {
-      console.warn("[Route /analyze] CV file missing");
-      console.log("[Route /analyze] req.files:", req.files);
       return res.status(400).json({ error: "CV file is required" });
     }
 
-    console.log(`[Route /analyze] File received: ${req.file.originalname}, size: ${req.file.buffer?.length || 0} bytes`);
-
     if (!process.env.AI_API_KEY) {
-      console.error("[Route /analyze] AI_API_KEY missing");
       return res.status(500).json({ error: "AI_API_KEY is missing from server environment" });
     }
 
     const job = String(req.body?.job || "").trim();
-    console.log("[Route /analyze] Job description length:", job.length);
-    console.log("[Route /analyze] Job description (first 200 chars):", job.substring(0, 200));
-    
     if (!job) {
-      console.warn("[Route /analyze] Job description missing");
       return res.status(400).json({ error: "Job description is required" });
     }
 
 
     const validation = validateJobDescription(job);
     if (!validation.valid) {
-      console.warn(`[Route /analyze] ❌ Job validation REJECTED: ${validation.reason}`);
       return res.status(400).json({ error: validation.reason || "Invalid job description" });
     }
 
-    console.log(`[Route /analyze] ✓ Job description validated (${job.split(" ").length} words)`);
-    console.log(`[Route /analyze] Sending PDF directly to Gemini: ${req.file.originalname}`);
-
     if (!req.file.buffer || req.file.buffer.length === 0) {
-      console.warn("[Route /analyze] PDF buffer is empty");
       return res.status(400).json({ error: "Invalid PDF file" });
     }
 
-    console.log("[Route /analyze] Calling AI analysis service...");
     const result = await analyzeWithAI(req.file.buffer, job);
 
     if ("error" in result) {
-      console.warn(`[Route /analyze] ❌ AI validation error: ${result.error}`);
       return res.status(400).json({ error: result.error });
     }
 
-    // Database persistence intentionally disabled in this build
-    console.log("[Route /analyze] Skipping database persistence (not configured)");
-
-    console.log(`[Route /analyze] ✓ Success: ${result.score}% match`);
     return res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected server error";
-    console.error("[Route /analyze] ✗ Error:", message);
     return res.status(500).json({ error: message });
   }
 });
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(port || 5000, () => {
-    console.log(`\n🚀 Server running on http://localhost:${port || 5000}\n`);
   });
 }
 
