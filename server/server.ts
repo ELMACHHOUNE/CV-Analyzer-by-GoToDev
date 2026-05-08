@@ -49,32 +49,6 @@ const geminiClient = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY || process.env.AI_API_KEY || "",
 );
 
-async function extractPdfText(fileBytes: Buffer): Promise<string> {
-  try {
-    console.log("[PDF Extract] Starting PDF text extraction, buffer size:", fileBytes.length);
-    
-    const { PDFParse } = await import("pdf-parse");
-    console.log("[PDF Extract] PDFParse imported successfully");
-    
-    const parser = new PDFParse({ data: fileBytes });
-    console.log("[PDF Extract] Parser created");
-    
-    const parsed = await parser.getText();
-    console.log("[PDF Extract] parseText() completed");
-    
-    const text = (parsed.text || "").trim();
-    console.log("[PDF Extract] Extracted text length:", text.length);
-    
-    return text;
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error("[PDF Extract] Error during extraction:", errorMsg);
-    console.error("[PDF Extract] Full error:", error);
-    return "";
-  }
-}
-
-
 type AnalyzeResult = {
   score: number;
   skills_match: string[];
@@ -201,7 +175,7 @@ function validateJobDescription(job: string): { valid: boolean; reason?: string 
   return { valid: true };
 }
 
-async function analyzeWithAI(cvText: string, job: string): Promise<AnalyzeResult | { error: string }> {
+async function analyzeWithAI(cvPdfBytes: Buffer, job: string): Promise<AnalyzeResult | { error: string }> {
   try {
     console.log("[AI Service] Starting analysis...");
 
@@ -217,7 +191,8 @@ async function analyzeWithAI(cvText: string, job: string): Promise<AnalyzeResult
    - Look for: programming languages, frameworks, tools, certifications, soft skills
 
 3. CV SKILL MATCHING:
-   - Find exact or similar matches in the CV text
+  - Read the attached PDF CV directly
+  - Find exact or similar matches in the CV content
    - Do NOT guess or assume skills the candidate has
    - Be conservative and realistic
 
@@ -241,7 +216,7 @@ async function analyzeWithAI(cvText: string, job: string): Promise<AnalyzeResult
 
 NO explanations. NO markdown. ONLY JSON.`;
 
-    const userPrompt = `Job Description:\n${job}\n\n---\n\nCV Text:\n${cvText}\n\n---\n\nAnalyze and return ONLY JSON.`;
+    const userPrompt = `Job Description:\n${job}\n\nAnalyze the attached PDF CV and return ONLY JSON.`;
 
     const model = geminiClient.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash" });
 
@@ -252,7 +227,15 @@ NO explanations. NO markdown. ONLY JSON.`;
       contents: [
         {
           role: "user",
-          parts: [{ text: fullPrompt }],
+          parts: [
+            { text: fullPrompt },
+            {
+              inlineData: {
+                mimeType: "application/pdf",
+                data: cvPdfBytes.toString("base64"),
+              },
+            },
+          ],
         },
       ],
       generationConfig: {
@@ -334,21 +317,15 @@ app.post("/analyze", upload.single("cv"), async (req: Request, res: Response) =>
     }
 
     console.log(`[Route /analyze] ✓ Job description validated (${job.split(" ").length} words)`);
-    console.log(`[Route /analyze] Extracting CV text from: ${req.file.originalname}`);
-    
-    const cvText = await extractPdfText(req.file.buffer);
-    console.log(`[Route /analyze] PDF extraction returned: ${cvText.length} characters`);
+    console.log(`[Route /analyze] Sending PDF directly to Gemini: ${req.file.originalname}`);
 
-    if (!cvText) {
-      console.warn("[Route /analyze] Could not extract PDF text - cvText is empty");
-      console.warn("[Route /analyze] Buffer was:", req.file.buffer?.length, "bytes");
-      return res.status(400).json({ error: "Could not extract text from the PDF" });
+    if (!req.file.buffer || req.file.buffer.length === 0) {
+      console.warn("[Route /analyze] PDF buffer is empty");
+      return res.status(400).json({ error: "Invalid PDF file" });
     }
 
-    console.log(`[Route /analyze] CV extracted: ${cvText.length} characters`);
-
     console.log("[Route /analyze] Calling AI analysis service...");
-    const result = await analyzeWithAI(cvText, job);
+    const result = await analyzeWithAI(req.file.buffer, job);
 
     if ("error" in result) {
       console.warn(`[Route /analyze] ❌ AI validation error: ${result.error}`);
