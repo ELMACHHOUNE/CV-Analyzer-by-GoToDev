@@ -1,6 +1,20 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+
+// Polyfills required for pdfjs-dist in Node environments (used by pdf-parse)
+if (typeof global !== "undefined") {
+  if (typeof (global as any).DOMMatrix === "undefined") {
+    (global as any).DOMMatrix = class DOMMatrix {};
+  }
+  if (typeof (global as any).Path2D === "undefined") {
+    (global as any).Path2D = class Path2D {};
+  }
+  if (typeof (global as any).ImageData === "undefined") {
+    (global as any).ImageData = class ImageData {};
+  }
+}
+
 import type { Request, Response } from "express";
 import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
